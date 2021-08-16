@@ -5,3 +5,8 @@
 - `*` Multiplication
 - `/` Division
 - `^` Exponentiation
+
+
+### Rewords
+
+- expr -> exp

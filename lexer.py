@@ -105,10 +105,10 @@ TT_EOF   = 'EOF'
 # TT for variables
 TT_EQ           = 'EQ'
 TT_IDENTIFIER   = 'IDENTIFIER'
-TT_KEYWORD         = 'KEYWORD'
+TT_KEYWORD      = 'KEYWORD'
 
 KEYWORDS = [
-    'LET'
+    'let'
 ]
 
 class Token:
@@ -219,10 +219,10 @@ class Lexer:
             return Token(TT_FLOAT, float(num_str),pos_start,self.pos)
 
     def make_identifier(self):
-        id_str=''
+        id_str = ''
         pos_start = self.pos.copy()
 
-        while self.cur_char != None and self.cur_char in LETTERS_DIGITS+'_':
+        while self.cur_char != None and self.cur_char in LETTERS_DIGITS + '_':
             id_str += self.cur_char
             self.advance()
 
@@ -246,6 +246,24 @@ class NumberNode:
     
     def __repr__(self):
         return f'{self.tok}'
+
+
+class VarAccessNode:
+    def __init__(self,var_name_tok):
+        self.var_name_tok = var_name_tok
+
+        self.pos_start = self.var_name_tok.pos_start
+        self.pos_end = self.var_name_tok.pos_end
+
+class VarAssignNode:
+    # value_node will be the value of the variable
+    def __init__(self,var_name_tok,value_node):
+        self.var_name_tok = var_name_tok
+        self.value_node = value_node
+
+        self.pos_start = self.var_name_tok.pos_start
+        self.pos_end = self.value_node.pos_end
+
 
 # Tokens for binary operators, ie + - / *
 class BinOpNode:
@@ -281,19 +299,23 @@ class ParseResult:
     def __init__(self):
         self.error = None
         self.node = None
+        self.adv_count = 0      # How many times have we advanced in this parse result for expr
+
+    def register_adv(self):
+        self.adv_count += 1
 
     def register(self,res):
-        if isinstance(res,ParseResult):
-            if res.error: self.error = res.error
-            return res.node
-        return res
-
+        self.adv_count += res.adv_count
+        if res.error: self.error = res.error
+        return res.node
+        
     def success(self,node):
         self.node = node
         return self
 
     def failure(self,error):
-        self.error = error
+        if not self.error or self.adv_count == 0:
+            self.error = error
         return self
 
 
@@ -332,15 +354,23 @@ class Parser:
         tok = self.cur_tok
 
         if tok.type in (TT_INT,TT_FLOAT):
-            res.register(self.advance())
+            res.register_adv()
+            self.advance()
             return res.success(NumberNode(tok))
 
+        elif tok.type == TT_IDENTIFIER:
+            res.register_adv()
+            self.advance()
+            return res.success(VarAccessNode(tok))
+
         elif tok.type == TT_LPAR:
-            res.register(self.advance())
+            res.register_adv()
+            self.advance()
             exp = res.register(self.exp())
             if res.error: return res
             if self.cur_tok.type == TT_RPAR:
-                res.register(self.advance())
+                res.register_adv()
+                self.advance()
                 return res.success(exp)
             else:
                 return res.failure(InvalidSyntaxError(
@@ -351,7 +381,7 @@ class Parser:
 
         return res.failure(InvalidSyntaxError(
             tok.pos_start, tok.pos_end,
-            "Expected INT, FLOAT, '+', '-' or '('\n"
+            "Expected INT, FLOAT, IDENTIFIER, '+', '-' or '('\n"
         ))
         # Here we returned error of +- too bcs there is no error handling for factor itself
         # it is only calling power, who is calling atom. Therefore, atom must reflect error of factor as well
@@ -364,7 +394,8 @@ class Parser:
         tok = self.cur_tok
 
         if tok.type in (TT_PLUS,TT_MINUS):
-            res.register(self.advance())
+            res.register_adv()
+            self.advance()
             factor = res.register(self.factor())
             if res.error: return res
             return res.success(UnaryOpNode(tok,factor))
@@ -377,21 +408,40 @@ class Parser:
     def exp(self):
         res = ParseResult()
 
-        if self.cur_tok.matches(TT_KEYWORD,'LET'):
-            res.register(self.advance())
+        if self.cur_tok.matches(TT_KEYWORD,'let'):
+            res.register_adv()
+            self.advance()
 
-            if self.cur_tok != TT_IDENTIFIER:
+            if self.cur_tok.type != TT_IDENTIFIER:
                 return res.failure(InvalidSyntaxError(
                     self.cur_tok.pos_start, self.cur_tok.pos_end,
-                    "Expected Identifier"
+                    "Expected Identifier\n"
                 ))
             
             var_name = self.cur_tok
-            res.register(self.advance())
+            res.register_adv()
+            self.advance()
 
+            if self.cur_tok.type != TT_EQ:
+                return res.failure(InvalidSyntaxError(
+                    self.cur_tok.pos_start, self.cur_tok.pos_end,
+                    "Expected '='\n"
+                ))
             
+            res.register_adv()
+            self.advance()
+            exp = res.register(self.exp())
+            if res.error: return res
+            return res.success(VarAssignNode(var_name,exp))
 
-        return self.bin_op(self.term,(TT_PLUS,TT_MINUS))
+        node = res.register(self.bin_op(self.term,(TT_PLUS,TT_MINUS)))
+
+        if res.error:
+            return res.failure(InvalidSyntaxError(
+                self.cur_tok.pos_start,self.cur_tok.pos_end,
+                "Expected 'let',INT, FLOAT, IDENTIFIER, '+', '-' or '('\n"
+            ))
+        return res.success(node)
 
     # We define this func for easy use by both exp and term
     # where ops would stand for +- and */ respectively
@@ -406,7 +456,8 @@ class Parser:
 
         while self.cur_tok.type in ops:
             op_tok = self.cur_tok
-            res.register(self.advance())
+            res.register_adv()
+            self.advance()
             right = res.register(func_b())
             if res.error: return res
             left = BinOpNode(left,op_tok,right)
@@ -481,6 +532,12 @@ class Number:
         if isinstance(other, Number):
             return Number(self.value ** other.value).set_context(self.context), None
 
+    def copy(self):
+        copy = Number(self.value)
+        copy.set_pos(self.pos_start,self.pos_end)
+        copy.set_context(self.context)
+        return copy
+    
     def __repr__(self):
         return str(self.value)
 
@@ -494,6 +551,34 @@ class Context:
         self.display_name = display_name
         self.parent = parent
         self.parent_entry_pos = parent_entry_pos
+        self.symbol_table = None
+
+##########################
+# SYMBOL TABLE : Keeps track of all var names and their values
+##########################
+
+# For every function, there would be a new symbol table to store its variables
+# and once the func has run, this table could be discarded
+
+class SymbolTable:
+    def __init__(self):
+        self.symbols = {}
+        self.parent = None      # Global variables
+
+    # For getting var value
+    def get(self, name):
+        value = self.symbols.get(name, None)    # Get a value, if cant get, then default it to None
+        # If None, check parent table for occurence, otherwise return as it is
+        if value == None and self.parent:
+            return self.parent.get(name)
+        return value
+
+    # For setting var value
+    def set(self,name,value):
+        self.symbols[name] = value
+
+    def remove(self,name):
+        del self.symbols[name]
 
 
 ##########################
@@ -520,6 +605,36 @@ class Interpreter:
         return RTResult().success(
             Number(node.tok.value).set_context(context).set_pos(node.pos_start,node.pos_end)
         )
+
+    def visit_VarAccessNode(self,node,context):
+        res = RTResult()
+        var_name = node.var_name_tok.value
+        value = context.symbol_table.get(var_name)
+
+        # Case where var isnt defined
+        if not value:
+            return res.failure(RTError(
+                node.pos_start,node.pos_end,
+                f"'{var_name}' is not defined\n",
+                context
+            ))
+
+        # Value is copied and the position is now set to where the 
+        # variable was accessed, not where it was assigned
+        value = value.copy().set_pos(node.pos_start,node.pos_end)
+        return res.success(value)
+
+
+    def visit_VarAssignNode(self,node,context):
+        res = RTResult()
+        var_name = node.var_name_tok.value
+        value = res.register(self.visit(node.value_node,context))
+
+        if res.error: return res
+
+        context.symbol_table.set(var_name,value)
+        return res.success(value)
+
 
     def visit_BinOpNode(self,node,context):
         # print("Found Binary Op Node")
@@ -570,6 +685,9 @@ class Interpreter:
 # RUN
 ##########################
 
+global_symbol_table = SymbolTable()
+global_symbol_table.set("null",Number(0))
+
 def run(fn, text):
     # Generate Tokens
     lexer = Lexer(fn, text)
@@ -584,6 +702,7 @@ def run(fn, text):
     # Run Error (if no error obv)
     interpreter = Interpreter()
     context = Context('<program>')
+    context.symbol_table = global_symbol_table
     result = interpreter.visit(ast.node,context)
 
     return result.value,result.error

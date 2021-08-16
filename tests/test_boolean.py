@@ -35,6 +35,10 @@ class TestBoolian(unittest.TestCase):
         res, err= lexer.run("<test>", "(1==1) and not (1!=1)")
         self.assertEqual(str(res), "1")
 
+    def test_greater_less_than(self):
+        res, err= lexer.run("<test>", "(2>=2) and not (2<2)")
+        self.assertEqual(str(res), "1")
+
     def test_true_false(self):
         res, err= lexer.run("<test>", "true + false")
         self.assertEqual(str(res), "1")

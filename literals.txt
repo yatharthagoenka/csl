@@ -1,17 +1,22 @@
 Priority Seq: factor > term > expr
 
-expr    : Keyword: VAR, Identifier, EQ, expr
-        : term ( (+ | -) term ) *
+expr            : Keyword: VAR, Identifier, EQ, expr
+                : comp-expr (( AND | OR ) comp-expr)*
+                
+comp-expr       : NOT comp-expr
+                : arith-expr (( == | < | <= | > | >= ) arith-expr) *
 
-term    : factor ( (* | /) factor) *
+arith-expr      : term (( + | - ) term) *
 
-factor  : (+ | -) factor
-        : power
+term            : factor (( * | / ) factor) *
 
-power   : atom (POW factor)*
+factor          : ( + | - ) factor
+                : power
 
-atom    : INT/FLOAT or Identifier (such as a varible name)
-        : LPAR expr RPAR (eg: (2+3) would be a factor)
+power           : atom (POW factor)*
+
+atom            : INT/FLOAT or Identifier (such as a varible name)
+                : LPAR expr RPAR (eg: (2+3) would be a factor)
 
 
 * means they could have multiple or no +- inside

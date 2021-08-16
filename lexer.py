@@ -1,5 +1,5 @@
 from string_arrows import *
-import string
+import string 
 
 ##########################
 # CONSTANTS
@@ -105,7 +105,11 @@ TT_EOF   = 'EOF'
 # TT for variables
 TT_EQ           = 'EQ'
 TT_IDENTIFIER   = 'IDENTIFIER'
-TT_VAR          = 'VAR'
+TT_KEYWORD         = 'KEYWORD'
+
+KEYWORDS = [
+    'LET'
+]
 
 class Token:
     # This start and end pos is of the particular token at hand for pointing error precisely
@@ -119,6 +123,9 @@ class Token:
             self.pos_end.advance()
         if pos_end:
             self.pos_end = pos_end
+
+    def matches(self,type_,value):
+        return self.type == type_ and self.value == value
 
     # repr is used to convert Class object to string for showing output
     def __repr__(self):
@@ -153,6 +160,8 @@ class Lexer:
                 self.advance()
             elif self.cur_char in DIGITS:
                 tokens.append(self.make_number())
+            elif self.cur_char in LETTERS:
+                tokens.append(self.make_identifier())
             elif self.cur_char == '+':
                 tokens.append(Token(TT_PLUS, pos_start=self.pos))
                 self.advance()
@@ -208,6 +217,18 @@ class Lexer:
             return Token(TT_INT,int(num_str),pos_start,self.pos)
         else:
             return Token(TT_FLOAT, float(num_str),pos_start,self.pos)
+
+    def make_identifier(self):
+        id_str=''
+        pos_start = self.pos.copy()
+
+        while self.cur_char != None and self.cur_char in LETTERS_DIGITS+'_':
+            id_str += self.cur_char
+            self.advance()
+
+        tok_type = TT_KEYWORD if id_str in KEYWORDS else TT_IDENTIFIER
+        return Token(tok_type,id_str,pos_start,self.pos)
+
 
 
 ##########################
@@ -354,6 +375,22 @@ class Parser:
         return self.bin_op(self.factor,(TT_MUL,TT_DIV))
 
     def exp(self):
+        res = ParseResult()
+
+        if self.cur_tok.matches(TT_KEYWORD,'LET'):
+            res.register(self.advance())
+
+            if self.cur_tok != TT_IDENTIFIER:
+                return res.failure(InvalidSyntaxError(
+                    self.cur_tok.pos_start, self.cur_tok.pos_end,
+                    "Expected Identifier"
+                ))
+            
+            var_name = self.cur_tok
+            res.register(self.advance())
+
+            
+
         return self.bin_op(self.term,(TT_PLUS,TT_MINUS))
 
     # We define this func for easy use by both exp and term

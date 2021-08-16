@@ -1,10 +1,14 @@
 from string_arrows import *
+import string
 
 ##########################
 # CONSTANTS
 ##########################
 
 DIGITS = '0123456789'
+LETTERS = string.ascii_letters
+LETTERS_DIGITS = LETTERS + DIGITS
+
 
 ##########################
 # LEXER
@@ -93,9 +97,15 @@ TT_PLUS  = 'PLUS'
 TT_MINUS = 'MINUS'
 TT_MUL   = 'MUL'
 TT_DIV   = 'DIV'
+TT_POW   = 'POW'
 TT_LPAR  = 'LPAR'
 TT_RPAR  = 'RPAR'
 TT_EOF   = 'EOF'
+
+# TT for variables
+TT_EQ           = 'EQ'
+TT_IDENTIFIER   = 'IDENTIFIER'
+TT_VAR          = 'VAR'
 
 class Token:
     # This start and end pos is of the particular token at hand for pointing error precisely
@@ -154,6 +164,12 @@ class Lexer:
                 self.advance()
             elif self.cur_char == '/':
                 tokens.append(Token(TT_DIV, pos_start=self.pos))
+                self.advance()
+            elif self.cur_char == '^':
+                tokens.append(Token(TT_POW, pos_start=self.pos))
+                self.advance()
+            elif self.cur_char == '=':
+                tokens.append(Token(TT_EQ, pos_start=self.pos))
                 self.advance()
             elif self.cur_char == '(':
                 tokens.append(Token(TT_LPAR, pos_start=self.pos))
@@ -289,18 +305,12 @@ class Parser:
                 "Expected + - / *\n"
             ))
         return res
-    
-    def factor(self):
+
+    def atom(self):
         res = ParseResult()
         tok = self.cur_tok
 
-        if tok.type in (TT_PLUS,TT_MINUS):
-            res.register(self.advance())
-            factor = res.register(self.factor())
-            if res.error: return res
-            return res.success(UnaryOpNode(tok,factor))
-
-        elif tok.type in (TT_INT,TT_FLOAT):
+        if tok.type in (TT_INT,TT_FLOAT):
             res.register(self.advance())
             return res.success(NumberNode(tok))
 
@@ -320,8 +330,25 @@ class Parser:
 
         return res.failure(InvalidSyntaxError(
             tok.pos_start, tok.pos_end,
-            "Expected int or float\n"
+            "Expected INT, FLOAT, '+', '-' or '('\n"
         ))
+        # Here we returned error of +- too bcs there is no error handling for factor itself
+        # it is only calling power, who is calling atom. Therefore, atom must reflect error of factor as well
+
+    def power(self):
+        return self.bin_op(self.atom,(TT_POW, ), self.factor)
+    
+    def factor(self):
+        res = ParseResult()
+        tok = self.cur_tok
+
+        if tok.type in (TT_PLUS,TT_MINUS):
+            res.register(self.advance())
+            factor = res.register(self.factor())
+            if res.error: return res
+            return res.success(UnaryOpNode(tok,factor))
+
+        return self.power()
 
     def term(self):
         return self.bin_op(self.factor,(TT_MUL,TT_DIV))
@@ -331,16 +358,19 @@ class Parser:
 
     # We define this func for easy use by both exp and term
     # where ops would stand for +- and */ respectively
-    def bin_op(self,func,ops):
+    def bin_op(self,func_a,ops,func_b=None):
+        if func_b==None:
+            func_b = func_a
+
         res = ParseResult()
         # Register take in the parse result from the func call and return the node from it
-        left = res.register(func())
+        left = res.register(func_a())
         if res.error: return res
 
         while self.cur_tok.type in ops:
             op_tok = self.cur_tok
             res.register(self.advance())
-            right = res.register(func())
+            right = res.register(func_b())
             if res.error: return res
             left = BinOpNode(left,op_tok,right)
         
@@ -410,6 +440,10 @@ class Number:
                 )
             return Number(self.value / other.value).set_context(self.context), None
 
+    def pow_by(self,other):
+        if isinstance(other, Number):
+            return Number(self.value ** other.value).set_context(self.context), None
+
     def __repr__(self):
         return str(self.value)
 
@@ -468,6 +502,8 @@ class Interpreter:
             result,error = left.multiplied_by(right)
         elif node.op_tok.type == TT_DIV:
             result,error = left.divided_by(right)
+        elif node.op_tok.type == TT_POW:
+            result,error = left.pow_by(right)
         
         if error:
             return res.failure(error)

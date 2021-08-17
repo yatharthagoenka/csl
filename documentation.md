@@ -9,8 +9,8 @@
 ## Keywords
 
 - `let` Assign variables
-- `true` = 1
-- `false` = 0
+- `true`|`false` = 1 | 0
+- `if` | `else` | `then` | `else if` -> conditions
 
 ### Rewords
 

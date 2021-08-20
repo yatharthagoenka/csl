@@ -19,24 +19,35 @@ factor
                 : power
 
 power           
-                : atom (POW factor)*
+                : call (POW factor)*
+
+call
+                : atom (LPAR  (expr (COMMA expr)*)  RPAR)?
+
 
 atom            
-                : LPAR expr RPAR (eg: (2+3) would be a factor)
-                : INT/FLOAT or Identifier (such as a varible name)
-                : LPAR expr RPAR (eg: (2+3) would be a factor)
+                : INT | FLOAT | Identifier
+                : LPAR expr RPAR 
+                : if-expr
+                : for-expr
+                : while-expr
+                : func-def
 
 if-expr         
                 : KEYWORD:IF expr KEYWORD:THEN expr
-				:  (KEYWORD:ELIF expr KEYWORD:THEN expr)*
-				:  (KEYWORD:ELSE expr)?
+                :  (KEYWORD:ELIF expr KEYWORD:THEN expr)*
+                :  (KEYWORD:ELSE expr)?
 
 for-expr
                 : KEYWORD:FOR Identifier EQ expr KEYWORD:TO expr (KEYWORD:STEP expr)? KEYWORD:THEN expr   
-                  ['?' states that negative value for steps is allowed]  
 
 while-expr
                 : KEYWORD:WHILE expr THEN expr
 
+func-def  
+                : KEYWORD:fnc  Identifier(?)  LPAR (Identifier (COMMA Identifier)*)? RPAR  ARROW  EXP
+
 * means they could have multiple or no +- inside
 (factor can have only one number therefore no *)
+
+['?' stands for optional]  

@@ -17,5 +17,4 @@
 ### Rewords
 
 - expr -> exp
-
-
+- step -> inc

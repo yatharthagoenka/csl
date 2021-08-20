@@ -1,4 +1,4 @@
-Priority Seq: factor > term > expr
+Priority Seq: atom > power > factor > term > expr
 
 expr            
                 : Keyword: VAR, Identifier, EQ, expr

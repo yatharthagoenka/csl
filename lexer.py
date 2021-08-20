@@ -119,6 +119,10 @@ TT_LTE = 'LESS_THAN_EQUAL'
 TT_GT = 'GREATER_THAN'
 TT_GTE = 'GREATER_THAN_EQUAL'
 
+# TT for Functions
+TT_COMMA = 'COMMA'
+TT_ARROW = 'ARROW'
+
 KEYWORDS = [
     'let',
     'and', 
@@ -127,7 +131,8 @@ KEYWORDS = [
     'if', 
     'elseif',
     'then',
-    'else'
+    'else',
+    'fnc'
 ]
 
 class Token:
@@ -185,8 +190,7 @@ class Lexer:
                 tokens.append(Token(TT_PLUS, pos_start=self.pos))
                 self.advance()
             elif self.cur_char == '-':
-                tokens.append(Token(TT_MINUS, pos_start=self.pos))
-                self.advance()
+                tokens.append(self.make_min_arr())
             elif self.cur_char == '*':
                 tokens.append(Token(TT_MUL, pos_start=self.pos))
                 self.advance()
@@ -212,6 +216,9 @@ class Lexer:
                 token, error = self.make_not_equals()
                 if error: return[], error
                 tokens.append(token)
+            elif self.cur_char == ',':
+                tokens.append(Token(TT_COMMA, pos_start=self.pos))
+                self.advance()
 
             # meaning we input an unrecognized char. Then we print an error
             else:
@@ -298,6 +305,18 @@ class Lexer:
             tok_type = TT_GTE
 
         return Token(tok_type, pos_start=pos_start,pos_end=self.pos)
+
+    def make_min_arr(self):
+        tok_type = TT_MINUS
+        pos_start = self.pos.copy()
+        self.advance()
+
+        if self.cur_char == '>':
+            self.advance()
+            tok_type = TT_ARROW
+
+        return Token(tok_type, pos_start=pos_start,pos_end=self.pos)
+
 
 ##########################
 # NODES

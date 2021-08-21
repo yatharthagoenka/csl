@@ -94,8 +94,12 @@ class Position:
 # TOKENS
 ##########################
 
+# TT for data types
 TT_INT   = 'TT_INT'
 TT_FLOAT = 'FLOAT'
+TT_STRING = 'STRING'
+
+# TT for operators
 TT_PLUS  = 'PLUS'
 TT_MINUS = 'MINUS'
 TT_MUL   = 'MUL'
@@ -192,6 +196,8 @@ class Lexer:
             elif self.cur_char == '+':
                 tokens.append(Token(TT_PLUS, pos_start=self.pos))
                 self.advance()
+            elif self.cur_char == '"':
+                tokens.append(self.make_string())
             elif self.cur_char == '-':
                 tokens.append(self.make_min_arrow())
             elif self.cur_char == '*':
@@ -253,6 +259,33 @@ class Lexer:
             return Token(TT_INT,int(num_str),pos_start,self.pos)
         else:
             return Token(TT_FLOAT, float(num_str),pos_start,self.pos)
+
+    def make_string(self):
+        string = ''
+        pos_start = self.pos.copy()
+        escape_char = False
+        self.advance()
+
+        escape_chars = {
+            'n': "\n",
+            't': "\t",
+            '"': '\"',
+            '\\': '\\'
+        }
+        
+        while self.cur_char!=None and (self.cur_char!='"' or escape_char):
+            if escape_char:
+                string+= escape_chars.get(self.cur_char, self.cur_char)
+                escape_char = False
+            else:
+                if self.cur_char == '\\':
+                    escape_char = True
+                else:
+                    string += self.cur_char
+            self.advance()
+
+        self.advance()
+        return Token(TT_STRING, string, pos_start, self.pos)
 
     def make_identifier(self):
         id_str = ''
@@ -327,6 +360,17 @@ class Lexer:
 
 # Tokens for numbers, ie INT and FLOAT
 class NumberNode:
+    def __init__(self,tok):
+        self.tok = tok
+
+        # For interpreter
+        self.pos_start = self.tok.pos_start
+        self.pos_end = self.tok.pos_end
+    
+    def __repr__(self):
+        return f'{self.tok}'
+
+class StringNode:
     def __init__(self,tok):
         self.tok = tok
 
@@ -544,6 +588,11 @@ class Parser:
             res.register_adv()
             self.advance()
             return res.success(NumberNode(tok))
+
+        elif tok.type in (TT_STRING):
+            res.register_adv()
+            self.advance()
+            return res.success(StringNode(tok))
 
         elif tok.type == TT_IDENTIFIER:
             res.register_adv()
@@ -1152,6 +1201,35 @@ class Number(Value):
     def __repr__(self):
         return str(self.value)
 
+class String(Value):
+    def __init__(self, value):
+        super().__init__()
+        self.value = value
+
+    def added_to(self, other):
+        if isinstance(other, String):
+            return String(self.value+other.value).set_context(self.context), None
+        else:
+            return None, Value.illegal_operation(self, other)
+
+    def multiplied_by(self, other):
+        if isinstance(other, Number):
+            return String(self.value*other.value).set_context(self.context), None
+        else:
+            return None, Value.illegal_operation(self, other)
+        
+    def is_true(self):
+        return len(self.value)>0
+
+    def copy(self):
+        copy = String(self.value)
+        copy.set_pos(self.pos_start,self.pos_end)
+        copy.set_context(self.context)
+        return copy
+
+    def __repr__(self):
+        return f'"{self.value}"'
+
 
 class Function(Value):
     def __init__(self,name,body_node,arg_names):
@@ -1264,6 +1342,11 @@ class Interpreter:
         # We directly called success as a single number can never give RT
         return RTResult().success(
             Number(node.tok.value).set_context(context).set_pos(node.pos_start,node.pos_end)
+        )
+
+    def visit_StringNode(self, node, context):
+        return RTResult().success(
+            String(node.tok.value).set_context(context).set_pos(node.pos_start,node.pos_end)
         )
 
     def visit_VarAccessNode(self,node,context):

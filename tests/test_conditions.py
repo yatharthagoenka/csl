@@ -34,5 +34,3 @@ class TestBoolian(unittest.TestCase):
     def test_else(self):
         res, err= lexer.run("<test>", "if 2*3==7 then 6 else if 5-3==1 then 9 else 60+9")
         self.assertEqual(str(res), "69")
-
-

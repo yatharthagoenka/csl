@@ -17,24 +17,24 @@ class TestLoops(unittest.TestCase):
 
     def setUp(self):
         # Runs before every test
+        res, err= lexer.run("<test>", "let a = 0")
         pass
 
     def tearDown(self):
         # Runs after every test
         pass
 
-    # Variable must be assigned before using in loop
-    def test_assign(self):
-        res, err= lexer.run("<test>", "let a = 0")
-        self.assertEqual(str(res), "0")
-
     def test_for_loop(self):
-        res, err= lexer.run("<test>", "for i=0 to 5 then let a=a+1")
-        self.assertEqual(str(res), "5")
+        res, err= lexer.run("<test>", "for i=1 to 101 then let a=a+i")
+        res, err= lexer.run("<test>", "a")
+        self.assertEqual(str(res), "5050")
+
+    def test_for_loop_with_step(self):
+        res, err= lexer.run("<test>", "for i=0 to 500 inc 5 then let a=a+1")
+        res, err= lexer.run("<test>", "a")
+        self.assertEqual(str(res), "100")
 
     def test_while_loop(self):
-        res, err= lexer.run("<test>", "while a<5 then let a=a+1")
-        self.assertEqual(str(res), "5")
-
-
-
+        res, err= lexer.run("<test>", "while a<1000 then let a=a+3")
+        res, err= lexer.run("<test>", "a")
+        self.assertEqual(str(res), "1002")

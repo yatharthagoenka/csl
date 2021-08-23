@@ -31,8 +31,8 @@ class TestLoops(unittest.TestCase):
 
     def test_for_loop_with_step(self):
         res, err= lexer.run("<test>", "for i=0 to 500 inc 5 then let a=a+1")
-        res, err= lexer.run("<test>", "a")
-        self.assertEqual(str(res), "100")
+        res, err= lexer.run("<test>", "a")  
+        self.assertEqual(str(res), "100") 
 
     def test_while_loop(self):
         res, err= lexer.run("<test>", "while a<1000 then let a=a+3")

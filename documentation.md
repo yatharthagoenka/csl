@@ -15,6 +15,12 @@
 - `inc` -> Define increment of variable in for loop  (Optional)
 - `fnc` -> Function
 
+### List Operations
+- `+` Add element to list
+- `-` Remove element at specified index
+- `$` Concatenate two lists
+- `/` Access element at specified index
+
 ### Rewords
 
 - expr -> exp

@@ -22,16 +22,20 @@ power
                 : call (POW factor)*
 
 call
-                : atom (LPAR  (expr (COMMA expr)*)  RPAR)?
+                : atom (LPAR  (expr (COMMA expr)*)?  RPAR)?
 
 
 atom            
                 : INT | FLOAT | STRING | Identifier
                 : LPAR expr RPAR 
+                : list-expr
                 : if-expr
                 : for-expr
                 : while-expr
                 : func-def
+
+list-expr
+                : LSQUARE (expr (COMMA expr)*)? RSQUARE
 
 if-expr         
                 : KEYWORD:IF expr KEYWORD:THEN expr

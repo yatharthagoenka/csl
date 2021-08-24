@@ -26,12 +26,12 @@ class TestLoops(unittest.TestCase):
     def test_assign_string(self):
         res, err= lexer.run("<test>", 'let a = "this is string"')
         res, err= lexer.run("<test>", "a")
-        self.assertEqual(str(res), '"this is string"')
+        self.assertEqual(str(res), 'this is string')
 
     def test_string_concat(self):
         res, err= lexer.run("<test>", '"hello"+"world"')
-        self.assertEqual(str(res), '"helloworld"')
+        self.assertEqual(str(res), 'helloworld')
 
     def test_string_mulitpy(self):
         res, err= lexer.run("<test>", '"go"*3')
-        self.assertEqual(str(res), '"gogogo"')
+        self.assertEqual(str(res), 'gogogo')

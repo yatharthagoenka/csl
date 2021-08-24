@@ -24,8 +24,8 @@ class TestLists(unittest.TestCase):
         pass
 
     def test_for_list(self):
-        res, err= lexer.run("<test>", "[1,2]")
-        self.assertEqual(str(res), "[1,2]")
+        res, err= lexer.run("<test>", '[1,2, "string", true]')
+        self.assertEqual(str(res), '[1,2,"string",1]')
 
     def test_for_list_add(self):
         res, err= lexer.run("<test>", "[1,2]+4")
@@ -38,5 +38,9 @@ class TestLists(unittest.TestCase):
     def test_for_list_concat(self):
         res, err= lexer.run("<test>", "[1,2]*[3,5]")
         self.assertEqual(str(res), "[1,2,3,5]") 
+
+    def test_for_list_get(self):
+        res, err= lexer.run("<test>", "[1,2,5,4]/2")
+        self.assertEqual(str(res), "5") 
         
     

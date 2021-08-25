@@ -1,7 +1,13 @@
 Priority Seq: Top ---> Bottom (Increasing)
 
 statements
-                : NewLine* expr (NewLine + expr)* NewLine*
+                : NewLine* statement (NewLine + statement)* NewLine*
+
+statement
+                : KEYWORD:RETURN expr?
+                : KEYWORD:CONTINUE
+                : KEYWORD:BREAK
+                : expr
 
 expr            
                 : Keyword: VAR, Identifier, EQ, expr
@@ -42,31 +48,32 @@ list-expr
 
 if-expr         
                 : KEYWORD:IF expr KEYWORD:THEN 
-                  [ expr (elif OR else)? ] 
+                  [ statement (elif OR else)? ] 
                   OR 
                   [NewLine statements KEYWORD:end (elif OR else) ]
 
 elif-expr
                 : KEYWORD:ELIF expr KEYWORD:THEN 
-                  [ expr (elif OR else)? ] 
+                  [ statement (elif OR else)? ] 
                   OR 
                   [NewLine statements KEYWORD:end (elif OR else) ]
 
 else-expr
                 : KEYWORD:ELSE 
-                  expr
+                  statement
                   OR
                   [NewLine statements KEYWORD:END]
 
 for-expr
                 : KEYWORD:FOR Identifier EQ expr KEYWORD:TO expr 
                   (KEYWORD:STEP expr)? KEYWORD:THEN 
+                  statement
                   expr OR [NewLine statements KEYWORD:END]
 
 
 while-expr
                 : KEYWORD:WHILE expr THEN 
-                  expr OR [NewLine statements KEYWORD:END]
+                  statement OR [NewLine statements KEYWORD:END]
 
 func-def  
                 : KEYWORD:fnc  Identifier(?)  

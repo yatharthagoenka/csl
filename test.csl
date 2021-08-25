@@ -1,0 +1,6 @@
+fnc add(a)->a+" test";
+
+for i=0 to 5 then 
+    print(add("hey"))
+    print(i)
+end

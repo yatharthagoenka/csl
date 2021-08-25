@@ -518,6 +518,7 @@ class ParseResult:
         self.node = None
         self.last_registered_adv_count = 0
         self.adv_count = 0      # How many times have we advanced in this parse result for expr
+        self.to_reverse_count = 0
 
     def register_adv(self):
         self.last_registered_adv_count = 1
@@ -540,7 +541,7 @@ class ParseResult:
         return self
 
     def failure(self,error):
-        if not self.error or self.adv_count == 0:
+        if not self.error or self.last_registered_adv_count == 0:
             self.error = error
         return self
     
@@ -876,7 +877,7 @@ class Parser:
                 if res.error: return res
                 else_case = (expr, False)
             
-            return res.success(else_case)
+        return res.success(else_case)
 
     def elif_or_else_expr(self):
         res = ParseResult()

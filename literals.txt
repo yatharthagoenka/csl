@@ -1,4 +1,7 @@
-Priority Seq: atom > power > factor > term > expr
+Priority Seq: Top ---> Bottom (Increasing)
+
+statements
+                : NewLine* expr (NewLine + expr)* NewLine*
 
 expr            
                 : Keyword: VAR, Identifier, EQ, expr
@@ -38,18 +41,37 @@ list-expr
                 : LSQUARE (expr (COMMA expr)*)? RSQUARE
 
 if-expr         
-                : KEYWORD:IF expr KEYWORD:THEN expr
-                :  (KEYWORD:ELIF expr KEYWORD:THEN expr)*
-                :  (KEYWORD:ELSE expr)?
+                : KEYWORD:IF expr KEYWORD:THEN 
+                  [ expr (elif OR else)? ] 
+                  OR 
+                  [NewLine statements KEYWORD:end (elif OR else) ]
+
+elif-expr
+                : KEYWORD:ELIF expr KEYWORD:THEN 
+                  [ expr (elif OR else)? ] 
+                  OR 
+                  [NewLine statements KEYWORD:end (elif OR else) ]
+
+else-expr
+                : KEYWORD:ELSE 
+                  expr
+                  OR
+                  [NewLine statements KEYWORD:END]
 
 for-expr
-                : KEYWORD:FOR Identifier EQ expr KEYWORD:TO expr (KEYWORD:STEP expr)? KEYWORD:THEN expr   
+                : KEYWORD:FOR Identifier EQ expr KEYWORD:TO expr 
+                  (KEYWORD:STEP expr)? KEYWORD:THEN 
+                  expr OR [NewLine statements KEYWORD:END]
+
 
 while-expr
-                : KEYWORD:WHILE expr THEN expr
+                : KEYWORD:WHILE expr THEN 
+                  expr OR [NewLine statements KEYWORD:END]
 
 func-def  
-                : KEYWORD:fnc  Identifier(?)  LPAR (Identifier (COMMA Identifier)*)? RPAR  ARROW  EXP
+                : KEYWORD:fnc  Identifier(?)  
+                  LPAR (Identifier (COMMA Identifier)*)? RPAR  
+                  (ARROW expr) OR [NewLine statements KEYWORD:END]
 
 * means they could have multiple or no +- inside
 (factor can have only one number therefore no *)

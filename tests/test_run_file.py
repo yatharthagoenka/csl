@@ -4,7 +4,7 @@ import lexer
 import unittest
 
 
-class TestMultiLine(unittest.TestCase):
+class TestRunFile(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         # Run once before tests
@@ -23,15 +23,11 @@ class TestMultiLine(unittest.TestCase):
         # Runs after every test
         pass
 
-    def test_multiline_arithmetic(self):
-        res, err= lexer.run("<test>", '1+2;3*4')
-        self.assertEqual(str(res), '3,12')
-
-    def test_multiline_loop_with_condition(self):
-        res, err= lexer.run("<test>", 'let a=[]')
-        res, err= lexer.run("<test>", 'for i=0 to 10 then; if i==4 then append(a,44);end')
+    def test_run(self):
+        res, err= lexer.run("<test>", 'run("tests/test.csl")')
         res, err= lexer.run("<test>", 'a')
-        self.assertEqual(str(res), '44')
+        self.assertEqual(str(res), 'hello')
+        
 
 
         

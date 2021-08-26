@@ -4,7 +4,7 @@ import lexer
 import unittest
 
 
-class TestBoolian(unittest.TestCase):
+class TestIfElseConditions(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         # Run once before tests

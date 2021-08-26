@@ -5,7 +5,7 @@ import unittest
 from unittest.mock import patch
 
 
-class TestBoolian(unittest.TestCase):
+class TestBuiltInFunctions(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         # Run once before tests

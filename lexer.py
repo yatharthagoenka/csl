@@ -1287,7 +1287,7 @@ class Parser:
         return res.success(ListNode(element_nodes,pos_start,self.cur_tok.pos_end.copy()))
 
 ##########################
-# RUNTIME RESULT (for checking div by 0)
+# RUNTIME RESULT 
 ##########################
 
 class RTResult:
@@ -1866,6 +1866,13 @@ class BuiltInFunction(BaseFunction):
             ))
         
         fn = fn.value
+        
+        if len(fn)<5 or not fn[-4:]==".csl":
+            return RTResult().failure(RTError(
+                self.pos_start, self.pos_end,
+                "Extension of the file must be .csl",
+                exec_ctx
+            ))
 
         try:
             with open(fn,"r") as file:

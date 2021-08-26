@@ -4,7 +4,7 @@ import lexer
 import unittest
 
 
-class TestLoops(unittest.TestCase):
+class TestStrings(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         # Run once before tests

@@ -1,0 +1,10 @@
+fnc add(a)->a+" test";
+
+# Comment
+let output = []
+
+for i=0 to 5 then 
+    append(output, add("hey\n"))
+end
+
+print(output)

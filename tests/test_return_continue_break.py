@@ -4,7 +4,7 @@ import lexer
 import unittest
 
 
-class TestMultiLine(unittest.TestCase):
+class TestReturnContinueBreak(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         # Run once before tests
